@@ -20,11 +20,6 @@ import weka.gui.visualize.ThresholdVisualizePanel;
 
 public class MainRunnable {
 	
-	/**
-	 * Still need to implement : 
-	 * folds to personal split algorithm
-	 * visualization of data
-	 */
 	
 	private static DataHandler originalData;
 	private static Instances[][] testtrainSetsIntro;
