@@ -54,6 +54,48 @@ public class DataHandler {
 		throw new FileNotFoundException("please load a file to the dataset");
 	}
 	
+	public Instances[] createDemoStratas() {
+		
+		//get the index for outdegree centrality 
+		int attIndex = dataSet.attribute("outdegree_centrality_for_reciever").index();
+		
+		//how we split the data
+		double mean = calculateMean();
+		
+		//copy instances to get attributes aswell
+		Instances introverts = new Instances(dataSet);
+		Instances extroverts = new Instances(dataSet);
+		extroverts.clear();
+
+		//split the data at the mean
+		for(int i = 0; i < introverts.size(); i++) {
+			
+			//remove from introverts and add to extroverts
+			if(introverts.get(i).value(attIndex) > mean) {
+				extroverts.add(introverts.remove(i));
+			}
+		}
+		
+
+		Instances[] output = new Instances[2];
+		output[0] = introverts;
+		output[1] = extroverts;
+		return output;
+		
+	}
+
+	public double calculateMean() {
+		
+		double totaledAttribute = 0.0;
+		
+		//get the index for outdegree centrality 
+		int attIndex = dataSet.attribute("outdegree_centrality_for_reciever").index();
+		for(int i = 0; i < dataSet.size(); i++) {
+			totaledAttribute += dataSet.get(i).value(attIndex);
+		}
+		return totaledAttribute/dataSet.size();
+	}
+	
 	/**
 	 * 
 	 * This will be used later
