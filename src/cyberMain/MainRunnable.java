@@ -20,7 +20,12 @@ import weka.gui.visualize.PlotData2D;
 import weka.gui.visualize.ThresholdVisualizePanel;
 
 public class MainRunnable {
+<<<<<<< HEAD
 
+=======
+	
+	
+>>>>>>> fe4a4b77260cafacb0716c4f172c05a30f27cdae
 	private static DataHandler originalData;
 	private static Instances[] dataSplitIntoStratas;
 	private static ClassificationAndValidation introvertModel;
