@@ -10,6 +10,7 @@ import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.ThresholdCurve;
 import weka.classifiers.meta.Bagging;
+import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.rules.ZeroR;
 import weka.classifiers.trees.J48;
 import weka.classifiers.trees.RandomForest;
@@ -19,16 +20,9 @@ import weka.gui.visualize.PlotData2D;
 import weka.gui.visualize.ThresholdVisualizePanel;
 
 public class MainRunnable {
-	
-	/**
-	 * Still need to implement : 
-	 * folds to personal split algorithm
-	 * visualization of data
-	 */
-	
+
 	private static DataHandler originalData;
-	private static Instances[][] testtrainSetsIntro;
-	private static Instances[][] testtrainSetsExtro;
+	private static Instances[] dataSplitIntoStratas;
 	private static ClassificationAndValidation introvertModel;
 	private static ClassificationAndValidation extrovertModel;
 	private final static String dataLink = "/Users/connorhofenbitzer/Desktop/sortedData.arff";
@@ -46,11 +40,8 @@ public class MainRunnable {
 			originalData.getDataset().setClassIndex(0);
 			
 			//split into stratas
-			Instances[] dataSplitIntoStratas = originalData.createDemoStratas();
+			dataSplitIntoStratas = originalData.splitMedian();
 			
-			//run cross validation splits
-			testtrainSetsIntro = introvertModel.crossValSplit(dataSplitIntoStratas[0], 10);
-			testtrainSetsExtro = extrovertModel.crossValSplit(dataSplitIntoStratas[1], 10);
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -68,21 +59,20 @@ public class MainRunnable {
 		//for generating ROC
 		ThresholdCurve introVertROC = null;
 		ThresholdCurve extroVertROC = null;
+
 		
+
 		//actually run the models
 		for(Classifier i : models) {
 			Evaluation introValidate = null;
 			Evaluation extroValidate = null;
 
 			//evaluate the introvert model
-			for(int h = 0; h < testtrainSetsIntro[0].length; h++) {
-				introValidate = introvertModel.classify(i, testtrainSetsIntro[1][h], testtrainSetsIntro[0][h]);
-			}
+			introValidate = introvertModel.classify(i, dataSplitIntoStratas[0]);
+			
 			
 			//evaluate the extravert model
-			for(int f = 0; f < testtrainSetsExtro[0].length; f++) {
-				extroValidate = extrovertModel.classify(i, testtrainSetsExtro[1][f], testtrainSetsExtro[0][f]);	
-			}
+			extroValidate = extrovertModel.classify(i, dataSplitIntoStratas[1]);	
 			
 			//generate ROC curves
 			introVertROC = new ThresholdCurve();

@@ -10,6 +10,10 @@ public class DataHandler {
 	
 	private Instances dataSet;
 	
+	/**
+	 * Handles CSVs datasets
+	 * @param dataPath : path to the dataset
+	 */
 	public DataHandler(String dataPath) {
 		loadDataset(dataPath);
 	}
@@ -46,6 +50,7 @@ public class DataHandler {
 		if(dataSet != null) {
 			return dataSet;
 		}
+		
 		throw new FileNotFoundException("please load a file to the dataset");
 	}
 	
@@ -59,19 +64,21 @@ public class DataHandler {
 		int attIndex = dataSet.attribute("outdegree_centrality_for_reciever").index();
 		
 		//how we split the data
-		double mean = calculateMean();
+		double workingVar =  calculateMean();
 		
 		//copy instances to get attributes aswell
 		Instances introverts = new Instances(dataSet);
 		Instances extroverts = new Instances(dataSet);
+		System.out.println("total set " + introverts.size());
 		extroverts.clear();
-
-		//split the data at the mean
+		
+		//split the data at the working variable
 		for(int i = 0; i < introverts.size(); i++) {
 			
 			//remove from introverts and add to extroverts
-			if(introverts.get(i).value(attIndex) > mean) {
+			if(introverts.get(i).value(attIndex) > workingVar) {
 				extroverts.add(introverts.remove(i));
+				
 			}
 		}
 		
@@ -79,15 +86,42 @@ public class DataHandler {
 		Instances[] output = new Instances[2];
 		output[0] = introverts;
 		output[1] = extroverts;
+		
 		return output;
 		
 	}
+	
+	public Instances[] splitMedian() {
+		
+		//copy instances to get attributes aswell
+		Instances introverts = new Instances(dataSet);
+		Instances extroverts = new Instances(dataSet);
+		
+		int i = 0;
+		int orgSize = introverts.size();
+		while(i < orgSize/2) {
+			introverts.delete(orgSize/2);
+			extroverts.delete(0);
+			i++;
+		}
+		
+		Instances[] output = new Instances[2];
+		output[0] = introverts;
+		output[1] = extroverts;
+		
 
+		return output;
+	}
+
+	
+	
+	//SMOTE pre-processing algorithm
+	
 	/**
 	 * Finds the mean of outdegree centrality for reciever
 	 * @return : mean of outdegree centrality for reciever
 	 */
-	public double calculateMean() {
+	private double calculateMean() {
 		
 		double totaledAttribute = 0.0;
 		
