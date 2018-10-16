@@ -25,8 +25,9 @@ data = pd.read_csv(cyberBullyingFile)
 dataSetY = data.copy().ix[:,0]
 dataSetX = data.copy().ix[:,1:data.shape[0]]
 
-#Looks nice
-print("Bullying classifications")
+#Just looks nice, separates misc error messages
+print("\nBullying classifications")
+print("########################")
 
 #Ive already sorted the data set around outward centrality so the halway
 #point is the mean
@@ -43,13 +44,13 @@ def splitAtMedian(dSetX, dSetY) :
 def crossValidate(X, Y) :
     sampler = SMOTE()
     Xa, Ya = sampler.fit_sample(X,Y)
-    X_train, X_test, y_Train, y_test = train_test_split(Xa, Ya, test_size = 0.3, random_state = 1)
+    X_train, X_test, y_Train, y_test = train_test_split(Xa , Ya, test_size = 0.3, random_state = 1)
 
-    return X_train, X_test, y_Train, y_test
+    return X_train, X_test, y_Train, y_test, Xa, Ya
 
 
 #calculate statistical parity differences
-def stasticalParity(dataI, labelsI, dataE, labelsE) :
+def stasticalParity(dataA, labelsA, dataB, labelsB) :
 
     #Calculate the probability of being bullied vs not being bullied
     positiveProb = sum(1 for y in labelsI if y == 1) / len(dataI)
@@ -80,52 +81,54 @@ def calculateEqualOpportunity(confusionMatrixE, confusionMatrixI):
 #splits introverts and extroverts at the median  for point of centrality
 introvertSetX, extrovertSetX, introvertSetY, extrovertSetY = splitAtMedian(dataSetX, dataSetY)
 
+#show statistical parity before SMOTE preprocessing
+print("statistical parity difference before processing: %.5f" % stasticalParity(introvertSetX, introvertSetY, extrovertSetX, extrovertSetY))
+
 #run cross validation
-introXTrain, introXTest, introYTrain , introYTest = crossValidate(introvertSetX, introvertSetY)
-extroXTrain, extroXTest, extroYTrain , extroYTest = crossValidate(extrovertSetX, extrovertSetY)
+introXTrain, introXTest, introYTrain , introYTest, introvertSetX, introvertSetY = crossValidate(introvertSetX, introvertSetY)
+extroXTrain, extroXTest, extroYTrain , extroYTest, extrovertSetX, extrovertSetY = crossValidate(extrovertSetX, extrovertSetY)
 
 #train the classifier for introverts
-rfI = RandomForestClassifier(n_estimators = 100, max_depth = 1, random_state = 1)
+rfI = RandomForestClassifier(n_estimators = 100, max_depth = 2, random_state = 1)
 rfI.fit(introXTrain, introYTrain)
 
 #calculate ROC for introverts
-#y_pred_rfI = rfI.predict_proba(introXTest)[:, 1]
 y_pred_rfI = rfI.predict(introXTest)
 fprI, tprI, thresholdsI = metrics.roc_curve(introYTest, y_pred_rfI)
 
 #train the classifier for Extroverts
-rfE = RandomForestClassifier(n_estimators = 100, max_depth = 1 , random_state = 1)
+rfE = RandomForestClassifier(n_estimators = 100, max_depth = 2, random_state = 1)
 rfE.fit(extroXTrain, extroYTrain)
 
 #calculate ROC for Extroverts
-#y_pred_rfE = rfE.predict_proba(extroXTest)[:, 1]
 y_pred_rfE = rfE.predict(extroXTest)
 fprE, tprE, thresholdsE = metrics.roc_curve(extroYTest, y_pred_rfE)
 
+#grab the confusion matrixs
 confusionMatrixExtro = metrics.confusion_matrix(extroYTest, y_pred_rfE)
 confusionMatrixIntro = metrics.confusion_matrix(introYTest, y_pred_rfI)
 
-print("Roc Auc Extrovert before preprocessing : ", roc_auc_score(extroYTest, y_pred_rfE))
-print("Roc Auc Introverts before prepropressing : ", roc_auc_score(introYTest, y_pred_rfI))
-print("statistical parity difference before preprocessing : ", stasticalParity(introvertSetX, introvertSetY, extrovertSetX, extrovertSetY))
-print("Equal opportunity difference before preprocessing : ", calculateEqualOpportunity(confusionMatrixExtro, confusionMatrixIntro))
+
+#output fairness and ML metrics
+print("Roc Auc Extrovert: %.5f " %  roc_auc_score(extroYTest, y_pred_rfE))
+print("Roc Auc Introverts: %.5f " % roc_auc_score(introYTest, y_pred_rfI))
+print("Statistical parity difference after processing: %.15f  " % stasticalParity(introvertSetX, introvertSetY, extrovertSetX, extrovertSetY))
+print("Equal opportunity difference: %.5f  "% calculateEqualOpportunity(confusionMatrixExtro, confusionMatrixIntro))
 
 #random forest ROC graph for introverts
-plt.figure(1)
+plt.subplot(1, 2, 1)
 plt.plot([0, 1], [0, 1], 'k--')
 plt.plot(fprI, tprI, label='ROC')
 plt.xlabel('False positive rate')
 plt.ylabel('True positive rate')
 plt.title('ROC curve Introverts')
 plt.legend(loc='best')
-plt.show()
 
 #random forest ROC graph for Extroverts
-plt.figure(2)
+plt.subplot(1, 2, 2)
 plt.plot([0, 1], [0, 1], 'k--')
 plt.plot(fprE, tprE, label='ROC')
-plt.xlabel('False positive rate')
-plt.ylabel('True positive rate')
 plt.title('ROC curve Extroverts')
+plt.xlabel('False positive rate')
 plt.legend(loc='best')
 plt.show()
